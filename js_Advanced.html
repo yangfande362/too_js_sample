@@ -1,0 +1,110 @@
+<html>
+<body>
+
+<script type="text/javascript">
+var param11= "abc";
+
+//1、自执行函数第一种写法
+(function(param){
+	alert(param);
+})(param11);
+
+//2、自执行函数第二种写法
+(function(obj){alert(obj)}(param11));
+
+//3、一个页面/模块定义一个全局变量，汇总所有二级变量
+var globalJs={globalJsVariable : "i'm globalJsVariable"}
+globalJs.alert = function(){
+	console.log("i'm the globalJs");
+	console.log(globalJs.globalJsVariable);
+}
+
+window.globalJs.alert();
+
+
+//4、正确定义命名空间（支持多个js文件共用一个命名空间，普通的自执行函数(闭包)无法做到共用）
+//参考：https://www.cnblogs.com/zyl910/p/js_namespace_bestpractice.html
+var jsnamespace = window.jsnamespace || {};
+
+jsnamespace.person = {
+	name : "jsnamespace",
+	doSomething : function(arg){
+		console.log(this.name + (arg || " no input"));
+	}
+}
+
+jsnamespace.person.doSomething(" a value");
+
+//5、利用闭包包装自定义插件时，我们觉得直接传window对象进去，我觉得还是不太妥当。我们并不确定我们的插件就一定用于浏览器上，也有可能使用在一些非浏览端上。所以我们还可以这么干，我们不传参数，直接取当前的全局this对象为作顶级对象用。
+//参考：https://www.jianshu.com/p/e65c246beac1
+var global = (function(){return this || (0,eval)('this')});
+console.log(global);
+
+
+//6、直接调用eval('this')和间接调用(0,eval)('this')的测试.
+//参考：http://www.cnblogs.com/qianlegeqian/p/3950044.html
+//结论：间接调用（操作符如逗号操作符和等号操作符-对它的操作数执行了GetValue）计算出来的是一个值，而不是引用；而直接调用（eval 和 (eval)）计算出的是一个引用
+var foo = "global.foo";
+var obj = {
+	foo : "obj.foo",
+	method : function(){
+		return this.foo;
+	}
+};
+console.log(obj.method());
+console.log((1,obj.method()));
+console.log(eval('this'));
+
+
+//7、eval和window.eval
+//参考：https://www.imooc.com/article/26358
+//结论：标准JavaScript下的eval，也许和this一样，既是关键字，也是一个变量（函数变量）。如果是当关键字调用的话，即字面上的eval()，那么在当前的上下文里执行；否则，即通过变量引用调用的话，就在全局上执行。这样就可以解释 window.eval　和 eval 的区别了：window.eval仅仅是window对象里的一个叫eval的属性，一个指向eval函数的属性。和window.eval2，window.eval3一样，仅仅一个属性，并非字面上的eval。
+(function A(){
+	var q = eval;
+	var p = window.eval;
+	window.eval("var a=1");
+	q("var b=1");
+	eval("var c=1");
+	p("var d=1");
+	
+	
+	console.log("p === window.eval");console.log(p === window.eval);
+	
+	console.log("p === eval");console.log(p === eval);
+	console.log("q === window.eval");console.log(q === window.eval);
+	console.log("q === eval");console.log(q === eval);
+})()
+
+console.log("typeof a");console.log(typeof a);
+console.log("typeof b");console.log(typeof b);
+console.log("typeof c");console.log(typeof c);
+console.log("typeof d");console.log(typeof d);
+
+
+
+//8、一个完整的js插件文件结构
+//参考：https://www.jianshu.com/p/e65c246beac1
+;(function(undefined) {
+    "use strict"
+    var _global;
+    var plugin = {
+        add: function(n1,n2){ return n1 + n2; },//加
+        sub: function(n1,n2){ return n1 - n2; },//减
+        mul: function(n1,n2){ return n1 * n2; },//乘
+        div: function(n1,n2){ return n1 / n2; },//除
+        sur: function(n1,n2){ return n1 % n2; } //余
+    }
+    // 最后将插件对象暴露给全局对象
+    _global = (function(){ return this || (0, eval)('this'); }());
+    if (typeof module !== "undefined" && module.exports) {
+        module.exports = plugin;
+    } else if (typeof define === "function" && define.amd) {
+        define(function(){return plugin;});
+    } else {
+        !('plugin' in _global) && (_global.plugin = plugin);
+    }
+}());
+</script>
+
+</body>
+</html>
